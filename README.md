@@ -1,2 +1,8 @@
-# uu-gold-mentor-proxy
-Universe Unlimited Gold Mastery Mentor proxy (no secrets; GEMINI_API_KEY is set only on the host).
+# UU Mentor proxy
+
+Key-hiding proxy for the Universe Unlimited Gold Mastery Mentor.
+
+Set `GEMINI_API_KEY` as an encrypted environment variable on the host. Never commit the key.
+
+- `POST /chat` — mentor chat
+- `GET /health` — health check
