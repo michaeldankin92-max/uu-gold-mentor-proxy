@@ -6,6 +6,7 @@ import analyst, { sessionTick } from "./api/analyst.js";
 import news from "./api/news.js";
 import { newsPushTick } from "./api/calendar.js";
 import push, { vapidConfigured } from "./api/push.js";
+import community from "./api/community.js";
 
 const keyLen = (process.env.GEMINI_API_KEY || "").length;
 console.log("uu-mentor env key_len=" + keyLen, "vapid=" + (vapidConfigured() ? "1" : "0"));
@@ -19,6 +20,7 @@ function route(urlPath) {
   if (p === "/verify" || p === "/api/verify") return verify;
   if (p === "/analyst" || p === "/api/analyst") return analyst;
   if (p === "/news" || p === "/api/news" || p === "/radar" || p === "/api/radar") return news;
+  if (p === "/community" || p.startsWith("/community/") || p.startsWith("/api/community")) return community;
   if (p === "/subscribe" || p === "/api/subscribe" || p.startsWith("/push/") || p.startsWith("/api/push/")) return push;
   return null;
 }
@@ -28,7 +30,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
     if (url.pathname === "/health" || (req.method === "GET" && url.pathname === "/")) {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, service: "uu-mentor", routes: ["/chat", "/mentor", "/verify", "/analyst", "/news", "/subscribe"] }));
+      res.end(JSON.stringify({ ok: true, service: "uu-mentor", routes: ["/chat", "/mentor", "/verify", "/analyst", "/news", "/subscribe", "/community"] }));
       return;
     }
     const handler = route(url.pathname);

@@ -9,3 +9,6 @@ node_modules
 .env.*
 data/news-store.json
 data/news-store.json.tmp
+data/community-store.json
+data/community-store.json.tmp
+data/community-img/
