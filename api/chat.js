@@ -316,6 +316,9 @@ async function callGemini(model, system, contents, useSearch, timeoutMs) {
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
+      const msg = String((j && j.error && (j.error.message || j.error.status)) || r.status);
+      const safe = msg.replace(/key[=:]\s*\S+/ig, "key=[redacted]").slice(0, 220);
+      console.error("mentor gemini", model, "status", r.status, safe);
       const err = new Error("upstream " + r.status);
       err.status = r.status;
       err.body = j;
