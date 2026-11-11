@@ -11,9 +11,9 @@ const ALLOWED = new Set([
 
 const MODELS = [
   "gemini-3-flash-preview",
-  "gemini-2.5-pro",
+  "gemini-3.8-flash",
+  "gemini-3.5-flash",
   "gemini-flash-latest",
-  "gemini-2.5-flash",
 ];
 
 const PRICE_SRC = "https://api.gold-api.com/price/XAU";
@@ -399,9 +399,19 @@ export default async function handler(req, res) {
   }));
   if (!contents.length) contents.push({ role: "user", parts: [{ text: question }] });
 
-  const useSearch = wantsSearch(question);
+  let useSearch = wantsSearch(question);
   try {
-    const out = await generate(system, contents, useSearch);
+    let out;
+    try {
+      out = await generate(system, contents, useSearch);
+    } catch (e) {
+      if (useSearch) {
+        console.error("mentor retry without search", e.status || e.message);
+        out = await generate(system, contents, false);
+      } else {
+        throw e;
+      }
+    }
     const liveMeta = {
       price: live.price ? live.price.price : null,
       priceTime: live.price ? live.price.at : null,
