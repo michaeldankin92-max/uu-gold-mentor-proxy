@@ -11,6 +11,27 @@ import { studyLevels } from "./analyst.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const STORE = process.env.NEWS_STORE_PATH || path.join(ROOT, "..", "data", "news-store.json");
+const NEWS_CACHE_PATH = process.env.NEWS_CACHE_PATH || path.join(ROOT, "..", "data", "news-cache.json");
+const NEWS_CACHE_MAX = 12 * 60 * 60 * 1000;
+function readNewsCache() {
+  try {
+    const j = JSON.parse(fs.readFileSync(NEWS_CACHE_PATH, "utf8"));
+    if (j && j.payload && j.at && Date.now() - j.at < NEWS_CACHE_MAX) return j;
+  } catch {}
+  return null;
+}
+function writeNewsCache(payload) {
+  try {
+    fs.mkdirSync(path.dirname(NEWS_CACHE_PATH), { recursive: true });
+    fs.writeFileSync(NEWS_CACHE_PATH, JSON.stringify({ at: Date.now(), payload }), { mode: 0o600 });
+  } catch (e) { console.error("news cache write", e.message || e); }
+}
+function friendlyCalNote(cal) {
+  if (!cal) return "Calendar temporarily unavailable.";
+  if (cal.stale) return "Updated from a saved calendar. The live feed is temporarily busy.";
+  if (!cal.ok && !(cal.events || []).length) return "Calendar temporarily unavailable.";
+  return null;
+}
 const MODELS = ["gemini-3-flash-preview", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-flash-latest"];
 const RISK = "Education only — not a buy or sell call, and profits are not guaranteed. Trading involves risk of loss. Spreads can widen around news; a small lot and waiting for the first candle are study habits, not a system.";
 
@@ -174,8 +195,6 @@ export default async function handler(req, res) {
     return res.end();
   }
   if (req.method !== "GET") return json(res, 404, { error: "GET /news" }, origin);
-  const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
-  if (!rateLimit(ip)) return json(res, 429, { error: "rate_limit" }, origin);
 
   try {
     let cal = await getCalendar();
@@ -198,11 +217,11 @@ export default async function handler(req, res) {
       catch (e) { playbooks[ev.id] = fallbackPlaybook(ev, levels, ev.actual ? "after" : "before"); }
     }
 
-    return json(res, 200, {
-      ok: cal.ok,
+    const payload = {
+      ok: !!(cal.ok || (cal.stale && (cal.events || []).length)),
       stale: !!cal.stale,
-      error: cal.error || null,
-      warning: cal.warning || null,
+      error: null,
+      warning: friendlyCalNote(cal) || cal.warning || null,
       at: cal.at,
       source: cal.source,
       official: cal.official ? { failures: cal.official.failures, sourceNotes: cal.official.sourceNotes, at: cal.official.at } : null,
@@ -213,9 +232,27 @@ export default async function handler(req, res) {
       events,
       playbooks,
       risk: RISK,
-    }, origin);
+    };
+    writeNewsCache(payload);
+    return json(res, 200, payload, origin);
   } catch (e) {
     console.error("news error", e.message || e);
-    return json(res, 502, { error: "news", message: "News Radar data unavailable right now.", risk: RISK }, origin);
+    const cached = readNewsCache();
+    if (cached && cached.payload) {
+      return json(res, 200, Object.assign({}, cached.payload, {
+        stale: true,
+        error: null,
+        warning: "Updated from a saved calendar. The live feed is temporarily busy.",
+      }), origin);
+    }
+    return json(res, 200, {
+      ok: false,
+      stale: false,
+      error: null,
+      warning: "Calendar temporarily unavailable.",
+      events: [],
+      playbooks: {},
+      risk: RISK,
+    }, origin);
   }
 }

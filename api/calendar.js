@@ -6,6 +6,9 @@
  * Never invent numbers. Investing.com is not used.
  */
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { alreadySent, markSent, notifyAll } from "./push.js";
 
 const FF_URLS = [
@@ -21,6 +24,23 @@ const FF_TTL = 5 * 60 * 1000;
 const FF_STALE_MAX = 12 * 60 * 60 * 1000;
 const OFFICIAL_TTL = 6 * 60 * 60 * 1000;
 const UA = "UU-Gold-Analyst/1.0 (education; universe-unlimited-app.surge.sh)";
+const DISK = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data", "calendar-cache.json");
+const STALE_NOTE = "Updated from a saved calendar. The live feed is temporarily busy.";
+
+function readDiskCal() {
+  try {
+    const j = JSON.parse(fs.readFileSync(DISK, "utf8"));
+    if (j && j.pack && j.at && Date.now() - j.at < FF_STALE_MAX) return j;
+  } catch {}
+  return null;
+}
+function writeDiskCal(pack) {
+  try {
+    fs.mkdirSync(path.dirname(DISK), { recursive: true });
+    fs.writeFileSync(DISK, JSON.stringify({ at: Date.now(), pack }), { mode: 0o600 });
+  } catch (e) { console.error("calendar cache write", e.message || e); }
+}
+
 
 const cache = {
   ff: null, ffAt: 0, ffFail: null,
@@ -155,20 +175,27 @@ async function fetchFf() {
       const rows = await fetchJson(url, 8000);
       const list = Array.isArray(rows) ? rows : (rows.events || []);
       const events = list.map(normalizeFf).filter((e) => e.relevant);
-      const pack = { events, source: url, at: manilaLabel(new Date()), ok: true, stale: false };
+      const pack = { events, source: url, at: manilaLabel(new Date()), atMs: now, ok: true, stale: false };
       cache.ff = pack;
       cache.ffAt = now;
       cache.ffFail = null;
+      writeDiskCal(pack);
       return pack;
     } catch (e) {
       lastErr = e;
     }
   }
   if (cache.ff && now - cache.ffAt < FF_STALE_MAX) {
-    return { ...cache.ff, stale: true, warning: "Using cached calendar because the live feed failed (" + (lastErr && lastErr.message) + ")." };
+    return { ...cache.ff, stale: true, warning: STALE_NOTE, error: null };
   }
-  cache.ffFail = "Economic calendar data unavailable. " + (lastErr && lastErr.message ? lastErr.message : "The Forex Factory JSON feed could not be reached.");
-  return { events: [], source: FF_URLS[0], at: manilaLabel(new Date()), ok: false, stale: false, error: cache.ffFail };
+  const disk = readDiskCal();
+  if (disk && disk.pack) {
+    cache.ff = disk.pack;
+    cache.ffAt = disk.at;
+    return { ...disk.pack, stale: true, warning: STALE_NOTE, error: null };
+  }
+  cache.ffFail = "Economic calendar data unavailable right now.";
+  return { events: [], source: FF_URLS[0], at: manilaLabel(new Date()), ok: false, stale: false, error: null, warning: "Calendar temporarily unavailable." };
 }
 
 async function fetchBls() {

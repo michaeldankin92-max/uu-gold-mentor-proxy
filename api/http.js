@@ -1,9 +1,10 @@
 /**
  * Shared CORS + rate limit for the UU mentor/verify proxy.
- * 20 requests / 10 minutes per IP. Origins limited to the live PWA and local preview.
+ * 120 requests / 10 minutes per IP (GET /news is not counted against this on the news handler). Origins limited to the live PWA and local preview.
  */
 export const ALLOWED = new Set([
   "https://universe-unlimited-app.surge.sh",
+  "https://latest--universe-unlimited-app.surge.sh",
   "https://lta-demo-p8w4n2k7qx.surge.sh",
   "http://127.0.0.1:8765",
   "http://localhost:8765",
@@ -11,11 +12,15 @@ export const ALLOWED = new Set([
   "http://127.0.0.1:8777",
   "http://localhost:8777",
   "http://127.0.0.1:8777/",
+  "http://127.0.0.1:8780",
+  "http://localhost:8780",
+  "http://127.0.0.1:8080",
+  "http://localhost:8080",
 ]);
 
 const hits = new Map();
 export const WINDOW_MS = 10 * 60 * 1000;
-export const MAX_HITS = 20;
+export const MAX_HITS = 120;
 
 export function cors(origin) {
   const allow = origin && ([...ALLOWED].some((o) => origin === o || origin === o.replace(/\/$/, "")));

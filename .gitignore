@@ -12,3 +12,8 @@ data/news-store.json.tmp
 data/community-store.json
 data/community-store.json.tmp
 data/community-img/
+
+data/calendar-cache.json
+data/calendar-cache.json.tmp
+data/news-cache.json
+data/news-cache.json.tmp
