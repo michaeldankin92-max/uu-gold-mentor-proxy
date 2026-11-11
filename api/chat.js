@@ -343,7 +343,7 @@ async function generate(system, contents, useSearch) {
       last = e;
       const st = e.status || 0;
       const aborted = e.name === "AbortError" || /aborted/i.test(String(e.message || ""));
-      // Rate limit, timeout, not found, or overloaded → try the next model.
+      console.error("mentor model fail", model, aborted ? "timeout" : ("status " + st));
       if (aborted || st === 404 || st === 429 || st === 503 || st === 400) continue;
       if (st >= 500) continue;
     }
