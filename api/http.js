@@ -4,9 +4,13 @@
  */
 export const ALLOWED = new Set([
   "https://universe-unlimited-app.surge.sh",
+  "https://lta-demo-p8w4n2k7qx.surge.sh",
   "http://127.0.0.1:8765",
   "http://localhost:8765",
   "http://127.0.0.1:8765/",
+  "http://127.0.0.1:8777",
+  "http://localhost:8777",
+  "http://127.0.0.1:8777/",
 ]);
 
 const hits = new Map();

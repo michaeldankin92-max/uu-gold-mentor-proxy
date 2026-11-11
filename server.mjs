@@ -7,6 +7,7 @@ import news from "./api/news.js";
 import { newsPushTick } from "./api/calendar.js";
 import push, { vapidConfigured } from "./api/push.js";
 import community from "./api/community.js";
+import { cors } from "./api/http.js";
 
 const keyLen = (process.env.GEMINI_API_KEY || "").length;
 console.log("uu-mentor env key_len=" + keyLen, "vapid=" + (vapidConfigured() ? "1" : "0"));
@@ -28,8 +29,15 @@ function route(urlPath) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url || "/", "http://localhost");
-    if (url.pathname === "/health" || (req.method === "GET" && url.pathname === "/")) {
-      res.writeHead(200, { "Content-Type": "application/json" });
+    if (url.pathname === "/health" || url.pathname === "/health/" || (req.method === "GET" && url.pathname === "/")) {
+      const origin = req.headers.origin || "";
+      const headers = Object.assign({ "Content-Type": "application/json; charset=utf-8" }, cors(origin));
+      if (!origin) headers["Access-Control-Allow-Origin"] = "*";
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, headers);
+        return res.end();
+      }
+      res.writeHead(200, headers);
       res.end(JSON.stringify({ ok: true, service: "uu-mentor", routes: ["/chat", "/mentor", "/verify", "/analyst", "/news", "/subscribe", "/community"] }));
       return;
     }

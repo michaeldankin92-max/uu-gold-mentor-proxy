@@ -4,6 +4,7 @@
  * The Gemini key is read from process.env.GEMINI_API_KEY only. Never log or return it.
  */
 import { cors, json, readBody } from "./http.js";
+import { LTA_SYSTEM } from "./chat.js";
 import { gatherLive, formatLive } from "./chat.js";
 
 const ACCM_URL = "https://accm.global/account/register?shareUserSetId=a5d4a2206f644ad3b";
@@ -209,7 +210,9 @@ export default async function handler(req, res) {
   if (!contents.length || contents[contents.length - 1].role !== "user") return json(res, 400, { error: "empty" }, origin);
   const question = contents[contents.length - 1].parts[0].text;
   const now = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Manila", weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date());
-  const system = MENTOR_SYSTEM + "\n\nCurrent time: " + now + " Asia/Manila." + (await liveBlock(question));
+  const persona = String((body && (body.persona || body.app)) || "").toLowerCase();
+  const isLta = persona === "lta" || persona === "lady" || persona === "lta-demo";
+  const system = (isLta ? LTA_SYSTEM : MENTOR_SYSTEM) + "\n\nCurrent time: " + now + " Asia/Manila." + (await liveBlock(question));
   const wantStream = body.stream !== false;
 
   const client = new AbortController();
