@@ -7,7 +7,7 @@ if ((!raw || raw.length < 20) && b64) {
   try { process.env.GEMINI_API_KEY = Buffer.from(b64, "base64").toString("utf8"); }
   catch { /* leave unset */ }
 }
-console.log("uu-mentor env key_len=" + (process.env.GEMINI_API_KEY || "").length + " b64_len=" + b64.length);
+console.log("uu-mentor env key_len=" + (process.env.GEMINI_API_KEY || "").length + " b64_len=" + b64.length + " probe=" + (process.env.UU_PROBE || "").length + " probe_file=" + (process.env.UU_PROBE_FILE || "").length);
 
 const port = Number(process.env.PORT) || 3000;
 const server = http.createServer(async (req, res) => {
