@@ -1,2 +1,11 @@
 data/verify-store.json
 data/verify-store.json.tmp
+data/analyst-store.json
+data/analyst-store.json.tmp
+data/push-store.json
+data/push-store.json.tmp
+node_modules
+.env
+.env.*
+data/news-store.json
+data/news-store.json.tmp
