@@ -428,3 +428,5 @@ export default async function handler(req, res) {
     return json(res, status, { error: "upstream", reply: "" }, origin);
   }
 }
+
+export { gatherLive, formatLive };

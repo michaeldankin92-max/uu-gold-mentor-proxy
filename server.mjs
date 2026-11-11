@@ -1,5 +1,6 @@
 import http from "node:http";
 import chat from "./api/chat.js";
+import mentor from "./api/mentor.js";
 import verify from "./api/verify.js";
 import analyst, { sessionTick } from "./api/analyst.js";
 import news from "./api/news.js";
@@ -14,6 +15,7 @@ const port = Number(process.env.PORT) || 3000;
 function route(urlPath) {
   const p = urlPath.replace(/\/$/, "") || "/";
   if (p === "/chat" || p === "/api/chat") return chat;
+  if (p === "/mentor" || p === "/api/mentor") return mentor;
   if (p === "/verify" || p === "/api/verify") return verify;
   if (p === "/analyst" || p === "/api/analyst") return analyst;
   if (p === "/news" || p === "/api/news" || p === "/radar" || p === "/api/radar") return news;
@@ -26,7 +28,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || "/", "http://localhost");
     if (url.pathname === "/health" || (req.method === "GET" && url.pathname === "/")) {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, service: "uu-mentor", routes: ["/chat", "/verify", "/analyst", "/news", "/subscribe"] }));
+      res.end(JSON.stringify({ ok: true, service: "uu-mentor", routes: ["/chat", "/mentor", "/verify", "/analyst", "/news", "/subscribe"] }));
       return;
     }
     const handler = route(url.pathname);
