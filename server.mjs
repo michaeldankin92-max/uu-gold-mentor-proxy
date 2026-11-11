@@ -1,5 +1,6 @@
 import http from "node:http";
-import handler from "./api/chat.js";
+import chat from "./api/chat.js";
+import verify from "./api/verify.js";
 
 const keyLen = (process.env.GEMINI_API_KEY || "").length;
 console.log("uu-mentor env key_len=" + keyLen);
@@ -14,11 +15,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (url.pathname === "/chat" || url.pathname === "/api/chat") {
-      await handler(req, res);
+      await chat(req, res);
+      return;
+    }
+    if (url.pathname === "/verify" || url.pathname === "/api/verify") {
+      await verify(req, res);
       return;
     }
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "POST /chat only" }));
+    res.end(JSON.stringify({ error: "POST /chat or POST /verify" }));
   } catch (e) {
     if (!res.headersSent) {
       res.writeHead(500, { "Content-Type": "application/json" });
